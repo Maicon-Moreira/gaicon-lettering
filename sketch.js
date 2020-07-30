@@ -1,41 +1,44 @@
-const ws = 600
+const wx = window.innerWidth
+const wy = window.innerHeight
 const sizes = [15, 3]
-const numLines = 5
+const desiredLineHeight = 75
+const numLines = Math.floor(wy / desiredLineHeight)
 const margin = 40
+const buttonRadius = 50
 let lastPos = null
 let _color = randomColor()
+let mouseWasPressed = false
+let changeColorPos = null
+let cleanPos = null
+let lastColorChange = 0
 
 function setup() {
-  createCanvas(ws, ws);
-  background(220);
-
-  const usefulSpace = ws - 2 * margin
-  const lineSize = usefulSpace / numLines
-  
-  stroke(0)
-  strokeWeight(2)
-
-  for (let i = 0; i <= numLines; i ++){
-    line(margin, margin + i*lineSize, ws-margin, margin + i*lineSize)
-  }
-
+  createCanvas(wx, wy);
+  textAlign(CENTER, CENTER)
   lastPos = [mouseX, mouseY]
+
+  clean()
 }
 
 function draw() {
-  let size
-  if (lastPos[1] < mouseY) size = sizes[0]
-  else size = sizes[1]
+  if (dist(mouseX, mouseY, ...changeColorPos) > buttonRadius &&
+    dist(mouseX, mouseY, ...cleanPos) > buttonRadius) {
 
-  if (mouseIsPressed)
-    _line(...lastPos, mouseX, mouseY, size)
+    let size
+    if (lastPos[1] < mouseY) size = sizes[0]
+    else size = sizes[1]
 
-  lastPos = [mouseX, mouseY]
-  
+    if (mouseWasPressed && mouseIsPressed)
+      _line(...lastPos, mouseX, mouseY, size)
+
+    lastPos = [mouseX, mouseY]
+    mouseWasPressed = mouseIsPressed
+  }
+
   noStroke()
   fill(_color)
-  rect(0, 0, ws, 10)
-  rect(0, ws, ws, -10)
+  rect(0, 0, wx, 10)
+  rect(0, wy, wx, -10)
 }
 
 function _line(x1, y1, x2, y2, size) {
@@ -62,8 +65,39 @@ function randomColor() {
   ]
 }
 
-function keyPressed() {
-  if (key == 'c') {
-    _color = randomColor()
+function mousePressed() {
+  if (dist(mouseX, mouseY, ...changeColorPos) < buttonRadius) {
+    if (abs(lastColorChange - frameCount) > 20){
+      _color = randomColor()
+      lastColorChange = frameCount
+    }
+  }
+  else if (dist(mouseX, mouseY, ...cleanPos) < buttonRadius) {
+    clean()
+  }
+}
+
+function clean() {
+  background(220);
+
+  const usefulSpace = wy - 2 * margin
+  const lineSize = usefulSpace / numLines
+
+  for (let i = 0; i <= numLines; i++) {
+    stroke(0)
+    strokeWeight(2)
+    line(margin, margin + i * lineSize, wx - margin, margin + i * lineSize)
+
+    if (i == numLines - 1) {
+      noStroke()
+      fill(0)
+      textSize(25)
+
+      changeColorPos = [wx / 4, margin + i * lineSize + lineSize / 2]
+      cleanPos = [3 * wx / 4, margin + i * lineSize + lineSize / 2]
+
+      text('Mudar cor', ...changeColorPos)
+      text('Limpar', ...cleanPos)
+    }
   }
 }
